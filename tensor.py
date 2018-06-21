@@ -141,7 +141,7 @@ def init_by_data(shape, data):
 def add(tenser1, tenser2, temp):
     # 取得形状
     # 构建新数组加起来
-
+    pass
 # 测试
 # a = [3, 3]
 # z = [[7, 9, 8], [4, 3, 2], [0, 1, 7]]
