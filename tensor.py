@@ -90,22 +90,40 @@ def analyse_statement(str):
     for i in range(len(str_split)):
         str_split[i] = str_split[i].strip()
     # 如果是生成自定义结构，等号后面第一个字符为'['
-    if(str_split[1][0] == '['):
+    if str_split[1][0] == '[':
         print('[生成自定义结构] 变量名：{0}, 参数：{1}'.format(str_split[0], str_split[1]))
         shape = analyze_structure(str_split[1])
         data = "".join(re.split(r"\[|\]| ", str_split[1])) # 去除'[] '
         print('参数：{0}'.format(data))
         data = data.split(',')
-
         globals()[str_split[0]] = init_by_data(shape, data) # 全局
     # 如果是其他生成
     else:
-        # para = str_split[1].strip("[]").split(',') # 取出参数并存为list
-        # print(len(para))
-        # i = 0
-        # for i in range(len(para)): # 去除多余空格并转换为int
-        #     para[i] = int(para[i].strip()) 
-        pass  
+        if str_split[1][0] == 'r':   
+            para = str_split[1][5:-1]
+            print(para)
+            print('[随机生成] 变量名：{0}, 形状：{1}'.format(str_split[0], para))
+        elif str_split[1][0] == 'o':
+            para = str_split[1][4:-1]
+            print(para)
+            print('[随机生成] 变量名：{0}, 形状：{1}'.format(str_split[0], para))
+        elif str_split[1][0] == 'z':
+            para = str_split[1][5:-1]
+            print(para)
+            print('[随机生成] 变量名：{0}, 形状：{1}'.format(str_split[0], para))
+        else:
+            print('输入错误')
+        shape = para.strip("()").split(',') # 取出参数并存为list
+        i = 0
+        for i in range(len(shape)): # 去除多余空格并转换为int
+             shape[i] = int(shape[i].strip()) 
+        
+        if str_split[1][0] == 'r': 
+            globals()[str_split[0]] = init_random(shape)
+        elif str_split[1][0] == 'o':
+            globals()[str_split[0]] = init_one(shape)
+        elif str_split[1][0] == 'z':
+            globals()[str_split[0]] = init_zero(shape)
 
 def init_random(shape):
     return Tensor(len(shape), shape, random(shape, 0))
@@ -121,7 +139,8 @@ def init_by_data(shape, data):
 
 #todo加法
 def add(tenser1, tenser2, temp):
-    pass
+    # 取得形状
+    # 构建新数组加起来
 
 # 测试
 # a = [3, 3]
@@ -141,5 +160,6 @@ def add(tenser1, tenser2, temp):
 # analyse_statement(str1)
 # print("test1:{0}".format(test1.data))
 
-str = "x= rand((1,2,3))"
-
+str = "x = rand((1,2,3))"
+analyse_statement(str)
+print("x:{0}".format(x.data))
