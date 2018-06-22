@@ -137,11 +137,29 @@ def init_zero(shape):
 def init_by_data(shape, data):
     return Tensor(len(shape), shape, create_tensor_by_structure(shape, data, 0))
 
-#todo加法
-def add(tenser1, tenser2, temp):
-    # 取得形状
-    # 构建新数组加起来
-    pass
+#解析tensor元素
+def get_tensor_data(tensor):
+    if isinstance(tensor, list):
+        i = 0
+        for i in range(len(tensor)):
+            get_tensor_data(tensor[i])
+    else:
+        print(tensor)
+
+# TODO: 加法
+def add(tensor1, tensor2, tensor3):
+    if isinstance(tensor1, list):
+        i = 0
+        for i in range(len(tensor1)):
+            add(tensor1[i], tensor2[i], tensor3)
+    else:
+        tensor3.append(tensor1 + tensor2)
+        # print(tensor3)
+    return tensor3
+
+# TODO: 算术操作
+
+
 # 测试
 # a = [3, 3]
 # z = [[7, 9, 8], [4, 3, 2], [0, 1, 7]]
@@ -160,6 +178,13 @@ def add(tenser1, tenser2, temp):
 # analyse_statement(str1)
 # print("test1:{0}".format(test1.data))
 
-str = "x = rand((1,2,3))"
-analyse_statement(str)
-print("x:{0}".format(x.data))
+# str = "x = one((2,2))"
+# analyse_statement(str)
+# print("x:{0}".format(x.data))
+
+x = [3, 3]
+y = [3, 4]
+z = add(x,y,[])
+shape = analyze_tensor(x, [])
+z = create_tensor_by_structure(shape, z, 0)
+print(z)
