@@ -6,6 +6,7 @@ class Tensor(object):
         self.ndim = ndim #维数
         self.shape = shape #形状
         self.data = data #数据
+        # TODO:self.dtype = dtype #类型
 #随机生成
 def random(x, index):
     if index >= len(x):
@@ -33,7 +34,15 @@ def zero(x, index):
         for i in range(0, x[index]):
             temp.append(zero(x, index+1))
         return temp
-
+#抽象生成函数
+def init_tensor(shape, index, data):
+    if index >= len(shape):
+            return data
+    else:
+        temp = []
+        for i in range(0, shape[index]):
+            temp.append(init_tensor(shape, index+1, data))
+        return temp
 # 生成特定格式tensor
 def create_tensor_by_structure(x, data, index):
     if index >= len(x):
@@ -45,7 +54,6 @@ def create_tensor_by_structure(x, data, index):
         for i in range(0, x[index]):
             temp.append(create_tensor_by_structure(x, data, index+1))
         return temp
-
 # 分析指定结构字符串shape
 def analyze_structure(str):
     str = "".join(str.split(" "))
@@ -146,7 +154,7 @@ def get_tensor_data(tensor):
     else:
         print(tensor)
 
-# TODO: 加法
+# 加法
 def add(tensor1, tensor2, tensor3):
     if isinstance(tensor1, list):
         i = 0
@@ -157,12 +165,36 @@ def add(tensor1, tensor2, tensor3):
     return tensor3
 # 加法包装
 def add_tensor(tensor1, tensor2):
-    data = add(x,y,[])
-    shape = analyze_tensor(x, [])
-    return create_tensor_by_structure(shape, data, 0)
+    shape_x = analyze_tensor(tensor1, [])
+    shape_y = analyze_tensor(tensor2, [])
+    print('shape1:{0}'.format(shape_x))
+    print('shape2:{0}'.format(shape_y))
+    if shape_x == shape_y:
+        print(True)
+        data = add(tensor1, tensor2, [])
+    else:
+        # 拓展不同形状tensor
+        # 从尾部开始比较
+        if len(shape_x) < len(shape_y): # 交换
+            shape_x, shape_y = shape_y, shape_x
+            tensor1, tensor2 = tensor2, tensor1
+        for i in range(len(shape_x)):
+            if shape_x[len(shape_x) - i - 1] != shape_y[len(shape_y) - i - 1]:
+                print("broadcasting failed!")
+            else:
+                shape_x.pop()
+                shape_y.pop()
+            if len(shape_y) == 0:
+                break
+        # 拓展tensor2
+        print('拓展:shape_x:{0},tensor2:{1}'.format(shape_x, tensor2))
+        tensor2 = init_tensor(shape_x, 0, tensor2)
+        print("tensor2:{0}".format(tensor2))
+        data = add(tensor1, tensor2, [])
+
+    return create_tensor_by_structure(analyze_tensor(tensor1, []), data, 0)
 
 # TODO: 算术操作
-
 
 # 测试
 # a = [3, 3]
@@ -186,7 +218,12 @@ def add_tensor(tensor1, tensor2):
 # analyse_statement(str)
 # print("x:{0}".format(x.data))
 
-x = [3, 3]
-y = [4, 4]
+
+x = [1, 2]
+y = [[1, 2],[3, 4], [5, 6]]
 z = add_tensor(x,y)
 print(z)
+# a = [1, 2]
+# shape = [2, 2]
+# z = init_tensor(shape, 0, a)
+# print(z)
