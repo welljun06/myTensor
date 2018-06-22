@@ -154,8 +154,12 @@ def add(tensor1, tensor2, tensor3):
             add(tensor1[i], tensor2[i], tensor3)
     else:
         tensor3.append(tensor1 + tensor2)
-        # print(tensor3)
     return tensor3
+# 加法包装
+def add_tensor(tensor1, tensor2):
+    data = add(x,y,[])
+    shape = analyze_tensor(x, [])
+    return create_tensor_by_structure(shape, data, 0)
 
 # TODO: 算术操作
 
@@ -183,8 +187,6 @@ def add(tensor1, tensor2, tensor3):
 # print("x:{0}".format(x.data))
 
 x = [3, 3]
-y = [3, 4]
-z = add(x,y,[])
-shape = analyze_tensor(x, [])
-z = create_tensor_by_structure(shape, z, 0)
+y = [4, 4]
+z = add_tensor(x,y)
 print(z)
