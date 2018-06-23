@@ -1,1 +1,1 @@
-operator:{2}
+print("shape_x:{0}".format(shape_x))

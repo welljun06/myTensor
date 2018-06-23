@@ -163,6 +163,16 @@ def cal_tensor(tensor1, tensor2, tensor3, operator):
     return tensor3
 # 运算包装
 def operate_tensor(tensor1, tensor2, operator):
+    # 判断维度时候为0
+    if not isinstance(tensor1, list):
+        temp = []
+        tensor1 = temp.append(tensor1)
+    if not isinstance(tensor2, list):
+        print("is not list")
+        temp = tensor2
+        tensor2 = []
+        tensor2.append(temp)
+        print('tensor2:{0}'.format(tensor2))
     shape_x = analyze_tensor(tensor1, [])
     shape_y = analyze_tensor(tensor2, [])
     if len(shape_x) < len(shape_y): # 交换
@@ -178,14 +188,38 @@ def operate_tensor(tensor1, tensor2, operator):
         # 从尾部开始比较
         for i in range(len(shape_y)):
             if shape_x[len(shape_x) - i - 1] != shape_y[len(shape_y) - i - 1]:
-                print("broadcasting failed!")
-                return
-        # 确定新tensor2新shape
-        shape = shape_x[0:(len(shape_x) - len(shape_y))]
-        # 拓展tensor2
-        print('拓展:shape:{0},tensor2:{1}'.format(shape, tensor2))
-        tensor2 = init_tensor(shape, 0, tensor2)
-        print("tensor1:{1}\ntensor2:{0}\noperator:{2}".format(tensor2,tensor1,operator))
+                if shape_x[len(shape_x) - i - 1] == 1:
+                    print("【不相等包含1情况拓展...】")
+                    shape_x[len(shape_x) - i - 1] = shape_y[len(shape_y) - i - 1]
+                    shape_temp = shape_x[0:len(shape_x) - i]
+                    print("更新shape_1: {0}".format(shape_x))
+                    # 取得当前为1的内容
+                    tensor_temp = tensor1
+                    for j in range(len(shape_x) - i):
+                        tensor_temp = tensor_temp[0]
+                    tensor1 = init_tensor(shape_temp, 0, tensor_temp)
+                    print("更新tensor1: {0}".format(tensor1))
+                elif shape_y[len(shape_y) - i - 1] == 1:
+                    print("【不相等包含1情况拓展...】")
+                    shape_y[len(shape_y) - i - 1] = shape_x[len(shape_x) - i - 1]
+                    shape_temp = shape_y[0:len(shape_y) - i]
+                    print("更新shape_2: {0}".format(shape_y))
+                     # 取得当前为1的内容
+                    tensor_temp = tensor2
+                    for j in range(len(shape_y) - i):
+                        tensor_temp = tensor_temp[0]
+                    tensor2 = init_tensor(shape_temp, 0, tensor_temp)
+                    print("更新tensor2: {0}".format(tensor2))
+                else:
+                    print("broadcasting failed!")
+                    return
+        # 确定新shape
+        if len(shape_x) != len(shape_y):
+            shape = shape_x[0:(len(shape_x) - len(shape_y))]
+            # 拓展tensor2
+            tensor2 = init_tensor(shape, 0, tensor2)
+            print('拓展:shape:{0},tensor2:{1}'.format(shape, tensor2))
+        print("tensor1:{1}\ntensor2:{0}\noperator:{2}\n【执行运算】".format(tensor2,tensor1,operator))
         data = cal_tensor(tensor1, tensor2, [], operator)
         # print("data:{0}".format(data))
     return create_tensor_by_structure(analyze_tensor(tensor1, []), data, 0)
@@ -215,8 +249,8 @@ def operate_tensor(tensor1, tensor2, operator):
 # print("x:{0}".format(x.data))
 
 
-x = [1,2]
-y = [[1, 2],[3, 4], [5, 6]]
+x = [[1, 2], [3, 4]]
+y = 5
 z = operate_tensor(x,y,'+')
 print("result:{0}".format(z))
 # a = [1, 2]
