@@ -1,1 +1,4 @@
-print("shape_x:{0}".format(shape_x))
+x = [[1, 2], [3, 4]]
+y = 5
+z = operate_tensor(x,y,'+')
+print("result:{0}".format(z))

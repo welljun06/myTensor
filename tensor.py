@@ -42,7 +42,7 @@ def create_tensor_by_structure(shape, data, index):
 def analyze_structure(str):
     str = "".join(str.split(" "))
     shape = []
-    count = 1
+    count = 1 # 最后一维个数
     # 计算维度数和最后一维个数
     for c in str:
         if c == '[':
@@ -52,8 +52,7 @@ def analyze_structure(str):
         elif c == ']':
             shape[len(shape) - 1] = count
             break
-    print(shape)
-    print(str)
+    print("tensor:{0}".format(str))
     stack = []
     i = 0
     for c in str:
@@ -63,7 +62,10 @@ def analyze_structure(str):
             stack.pop()
             if len(stack) > 0:
                 shape[len(stack)-1] += 1
-    print(shape)
+    # 修正shape
+    for i in range(1,len(shape)-1):
+        shape[len(shape)-1 - i] = shape[len(shape) - 1 - i] / shape[len(shape) - 2 - i]
+    print("分析当前字符串形状:{0}".format(shape))
     return shape
 
 #解析成tensor
@@ -158,21 +160,20 @@ def cal_tensor(tensor1, tensor2, tensor3, operator):
             tensor3.append(tensor1 + tensor2)
         elif operator == '-':
             tensor3.append(tensor1 - tensor2)
-        elif operator == '*':
+        elif operator == '.':
             tensor3.append(tensor1 * tensor2)
     return tensor3
 # 运算包装
 def operate_tensor(tensor1, tensor2, operator):
     # 判断维度时候为0
     if not isinstance(tensor1, list):
-        temp = []
-        tensor1 = temp.append(tensor1)
+        temp = tensor1
+        tensor1 = []
+        tensor1.append(temp)
     if not isinstance(tensor2, list):
-        print("is not list")
         temp = tensor2
         tensor2 = []
         tensor2.append(temp)
-        print('tensor2:{0}'.format(tensor2))
     shape_x = analyze_tensor(tensor1, [])
     shape_y = analyze_tensor(tensor2, [])
     if len(shape_x) < len(shape_y): # 交换
@@ -215,11 +216,12 @@ def operate_tensor(tensor1, tensor2, operator):
                     return
         # 确定新shape
         if len(shape_x) != len(shape_y):
-            shape = shape_x[0:(len(shape_x) - len(shape_y))]
+            print("【拓展维度...】")
             # 拓展tensor2
+            shape = shape_x[0:(len(shape_x) - len(shape_y))]
             tensor2 = init_tensor(shape, 0, tensor2)
-            print('拓展:shape:{0},tensor2:{1}'.format(shape, tensor2))
-        print("tensor1:{1}\ntensor2:{0}\noperator:{2}\n【执行运算】".format(tensor2,tensor1,operator))
+            print('更新shape_2:{0}\n更新tensor2:{1}'.format(shape_x, tensor2))
+        print("【执行运算...】\ntensor1:{1}\ntensor2:{0}\noperator:{2}".format(tensor2,tensor1,operator))
         data = cal_tensor(tensor1, tensor2, [], operator)
         # print("data:{0}".format(data))
     return create_tensor_by_structure(analyze_tensor(tensor1, []), data, 0)
@@ -251,9 +253,11 @@ def operate_tensor(tensor1, tensor2, operator):
 
 x = [[1, 2], [3, 4]]
 y = 5
-z = operate_tensor(x,y,'+')
+z = operate_tensor(x,y,'.')
 print("result:{0}".format(z))
 # a = [1, 2]
 # shape = [2, 2]
 # z = init_tensor(shape, 0, a)
 # print(z)
+
+# analyze_structure("[[[1,2,3], [1,2,3]],[[1,2,3], [1,2,3]],[[1,2,3], [1,2,3]]]")
