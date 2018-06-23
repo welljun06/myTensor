@@ -16,24 +16,6 @@ def random(x, index):
         for i in range(0, x[index]):
             temp.append(random(x, index+1))
         return temp
-#随机生成1
-def one(x, index):
-    if index >= len(x):
-        return 1
-    else:
-        temp = []
-        for i in range(0, x[index]):
-            temp.append(one(x, index+1))
-        return temp
-#随机生成0
-def zero(x, index):
-    if index >= len(x):
-        return 0
-    else:
-        temp = []
-        for i in range(0, x[index]):
-            temp.append(zero(x, index+1))
-        return temp
 #抽象生成函数
 def init_tensor(shape, index, data):
     if index >= len(shape):
@@ -43,17 +25,19 @@ def init_tensor(shape, index, data):
         for i in range(0, shape[index]):
             temp.append(init_tensor(shape, index+1, data))
         return temp
+
 # 生成特定格式tensor
-def create_tensor_by_structure(x, data, index):
-    if index >= len(x):
+def create_tensor_by_structure(shape, data, index):
+    if index >= len(shape):
         c = int(data[0])
         data.pop(0)
         return c
     else:
         temp = []
-        for i in range(0, x[index]):
-            temp.append(create_tensor_by_structure(x, data, index+1))
+        for i in range(0, shape[index]):
+            temp.append(create_tensor_by_structure(shape, data, index+1))
         return temp
+
 # 分析指定结构字符串shape
 def analyze_structure(str):
     str = "".join(str.split(" "))
@@ -110,15 +94,15 @@ def analyse_statement(str):
         if str_split[1][0] == 'r':   
             para = str_split[1][5:-1]
             print(para)
-            print('[随机生成] 变量名：{0}, 形状：{1}'.format(str_split[0], para))
+            print('[rand] 变量名：{0}, 形状：{1}'.format(str_split[0], para))
         elif str_split[1][0] == 'o':
             para = str_split[1][4:-1]
             print(para)
-            print('[随机生成] 变量名：{0}, 形状：{1}'.format(str_split[0], para))
+            print('[one] 变量名：{0}, 形状：{1}'.format(str_split[0], para))
         elif str_split[1][0] == 'z':
             para = str_split[1][5:-1]
             print(para)
-            print('[随机生成] 变量名：{0}, 形状：{1}'.format(str_split[0], para))
+            print('[zero] 变量名：{0}, 形状：{1}'.format(str_split[0], para))
         else:
             print('输入错误')
         shape = para.strip("()").split(',') # 取出参数并存为list
@@ -137,15 +121,15 @@ def init_random(shape):
     return Tensor(len(shape), shape, random(shape, 0))
 
 def init_one(shape):
-    return Tensor(len(shape), shape, one(shape, 0))
+    return Tensor(len(shape), shape, init_tensor(shape, 0, 1))
 
 def init_zero(shape):
-    return Tensor(len(shape), shape, zero(shape, 0))
+    return Tensor(len(shape), shape, init_tensor(shape, 0, 0))
 
 def init_by_data(shape, data):
     return Tensor(len(shape), shape, create_tensor_by_structure(shape, data, 0))
 
-#解析tensor元素
+#遍历tensor元素
 def get_tensor_data(tensor):
     if isinstance(tensor, list):
         i = 0
@@ -163,35 +147,47 @@ def add(tensor1, tensor2, tensor3):
     else:
         tensor3.append(tensor1 + tensor2)
     return tensor3
-# 加法包装
-def add_tensor(tensor1, tensor2):
+# 统一操作加减点乘（相同维度）
+def cal_tensor(tensor1, tensor2, tensor3, operator):
+    if isinstance(tensor1, list):
+        i = 0
+        for i in range(len(tensor1)):
+            cal_tensor(tensor1[i], tensor2[i], tensor3, operator)
+    else:
+        if operator == '+':
+            tensor3.append(tensor1 + tensor2)
+        elif operator == '-':
+            tensor3.append(tensor1 - tensor2)
+        elif operator == '*':
+            tensor3.append(tensor1 * tensor2)
+    return tensor3
+# 运算包装
+def operate_tensor(tensor1, tensor2, operator):
     shape_x = analyze_tensor(tensor1, [])
     shape_y = analyze_tensor(tensor2, [])
-    print('shape1:{0}'.format(shape_x))
-    print('shape2:{0}'.format(shape_y))
-    if shape_x == shape_y:
+    if len(shape_x) < len(shape_y): # 交换
+        shape_x, shape_y = shape_y, shape_x
+        tensor1, tensor2 = tensor2, tensor1
+    print('tensor1: {1} shape: {0}'.format(shape_x, tensor1))
+    print('tensor2: {1} shape: {0}'.format(shape_y, tensor2))
+    # 如果维度相同
+    if shape_x == shape_y: 
         print(True)
-        data = add(tensor1, tensor2, [])
+        data = cal_tensor(tensor1, tensor2, [], operator)
     else:
-        # 拓展不同形状tensor
         # 从尾部开始比较
-        if len(shape_x) < len(shape_y): # 交换
-            shape_x, shape_y = shape_y, shape_x
-            tensor1, tensor2 = tensor2, tensor1
-        for i in range(len(shape_x)):
+        for i in range(len(shape_y)):
             if shape_x[len(shape_x) - i - 1] != shape_y[len(shape_y) - i - 1]:
                 print("broadcasting failed!")
-            else:
-                shape_x.pop()
-                shape_y.pop()
-            if len(shape_y) == 0:
-                break
+                return
+        # 确定新tensor2新shape
+        shape = shape_x[0:(len(shape_x) - len(shape_y))]
         # 拓展tensor2
-        print('拓展:shape_x:{0},tensor2:{1}'.format(shape_x, tensor2))
-        tensor2 = init_tensor(shape_x, 0, tensor2)
-        print("tensor2:{0}".format(tensor2))
-        data = add(tensor1, tensor2, [])
-
+        print('拓展:shape:{0},tensor2:{1}'.format(shape, tensor2))
+        tensor2 = init_tensor(shape, 0, tensor2)
+        print("tensor1:{1}\ntensor2:{0}\noperator:{2}".format(tensor2,tensor1,operator))
+        data = cal_tensor(tensor1, tensor2, [], operator)
+        # print("data:{0}".format(data))
     return create_tensor_by_structure(analyze_tensor(tensor1, []), data, 0)
 
 # TODO: 算术操作
@@ -219,10 +215,10 @@ def add_tensor(tensor1, tensor2):
 # print("x:{0}".format(x.data))
 
 
-x = [1, 2]
+x = [1,2]
 y = [[1, 2],[3, 4], [5, 6]]
-z = add_tensor(x,y)
-print(z)
+z = operate_tensor(x,y,'+')
+print("result:{0}".format(z))
 # a = [1, 2]
 # shape = [2, 2]
 # z = init_tensor(shape, 0, a)
