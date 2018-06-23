@@ -7,8 +7,8 @@ class Tensor(object):
         self.shape = shape #形状
         self.data = data #数据
         # TODO:self.dtype = dtype #类型
-#随机生成
 def random(x, index):
+    # 随机生成
     if index >= len(x):
         return ran.randint(0,9)
     else:
@@ -16,8 +16,9 @@ def random(x, index):
         for i in range(0, x[index]):
             temp.append(random(x, index+1))
         return temp
-#抽象生成函数
+
 def init_tensor(shape, index, data):
+    #抽象生成函数
     if index >= len(shape):
             return data
     else:
@@ -26,8 +27,8 @@ def init_tensor(shape, index, data):
             temp.append(init_tensor(shape, index+1, data))
         return temp
 
-# 生成特定格式tensor
 def create_tensor_by_structure(shape, data, index):
+    # 生成特定格式tensor
     if index >= len(shape):
         c = int(data[0])
         data.pop(0)
@@ -38,8 +39,8 @@ def create_tensor_by_structure(shape, data, index):
             temp.append(create_tensor_by_structure(shape, data, index+1))
         return temp
 
-# 分析指定结构字符串shape
 def analyze_structure(str):
+    # 分析指定结构字符串shape
     str = "".join(str.split(" "))
     shape = []
     count = 1 # 最后一维个数
@@ -68,13 +69,13 @@ def analyze_structure(str):
     print("分析当前字符串形状:{0}".format(shape))
     return shape
 
-#解析成tensor
-def analyze_tensor(tensor, temp_list):
+def analyze_tensor(tensor, shape):
+    #分析结构返回shape
     if isinstance(tensor, list):
         # print('yes')
-        temp_list.append(len(tensor))
-        analyze_tensor(tensor[0], temp_list) 
-    return temp_list
+        shape.append(len(tensor))
+        analyze_tensor(tensor[0], shape) 
+    return shape
 
 # 解析输入生成语句
 def analyse_statement(str):
@@ -140,15 +141,6 @@ def get_tensor_data(tensor):
     else:
         print(tensor)
 
-# 加法
-def add(tensor1, tensor2, tensor3):
-    if isinstance(tensor1, list):
-        i = 0
-        for i in range(len(tensor1)):
-            add(tensor1[i], tensor2[i], tensor3)
-    else:
-        tensor3.append(tensor1 + tensor2)
-    return tensor3
 # 统一操作加减点乘（相同维度）
 def cal_tensor(tensor1, tensor2, tensor3, operator):
     if isinstance(tensor1, list):
@@ -183,14 +175,14 @@ def operate_tensor(tensor1, tensor2, operator):
     print('tensor2: {1} shape: {0}'.format(shape_y, tensor2))
     # 如果维度相同
     if shape_x == shape_y: 
-        print(True)
+        print("【执行运算...】\ntensor1:{1}\ntensor2:{0}\noperator:{2}".format(tensor2,tensor1,operator))
         data = cal_tensor(tensor1, tensor2, [], operator)
     else:
         # 从尾部开始比较
         for i in range(len(shape_y)):
             if shape_x[len(shape_x) - i - 1] != shape_y[len(shape_y) - i - 1]:
                 if shape_x[len(shape_x) - i - 1] == 1:
-                    print("【不相等包含1情况拓展...】")
+                    print("【存在1拓展...】")
                     shape_x[len(shape_x) - i - 1] = shape_y[len(shape_y) - i - 1]
                     shape_temp = shape_x[0:len(shape_x) - i]
                     print("更新shape_1: {0}".format(shape_x))
@@ -201,7 +193,7 @@ def operate_tensor(tensor1, tensor2, operator):
                     tensor1 = init_tensor(shape_temp, 0, tensor_temp)
                     print("更新tensor1: {0}".format(tensor1))
                 elif shape_y[len(shape_y) - i - 1] == 1:
-                    print("【不相等包含1情况拓展...】")
+                    print("【存在1拓展...】")
                     shape_y[len(shape_y) - i - 1] = shape_x[len(shape_x) - i - 1]
                     shape_temp = shape_y[0:len(shape_y) - i]
                     print("更新shape_2: {0}".format(shape_y))
@@ -224,9 +216,39 @@ def operate_tensor(tensor1, tensor2, operator):
         print("【执行运算...】\ntensor1:{1}\ntensor2:{0}\noperator:{2}".format(tensor2,tensor1,operator))
         data = cal_tensor(tensor1, tensor2, [], operator)
         # print("data:{0}".format(data))
-    return create_tensor_by_structure(analyze_tensor(tensor1, []), data, 0)
+    result = create_tensor_by_structure(analyze_tensor(tensor1, []), data, 0)
+    print("【结果】：{0}".format(result))
+    return result
 
-# TODO: 算术操作
+def tra_tensor(tensor_x, tensor_y, result):
+    # 叉乘底层
+    temp = [0]
+    if isinstance(tensor_x, list):   
+        for i in range(len(tensor_x)):
+            if isinstance(tensor_x[i], list):
+                tra_tensor(tensor_x[i], tensor_y, result)
+            else:
+                temp_one = operate_tensor(tensor_x[i], tensor_y[i],'.')
+                temp = operate_tensor(temp_one, temp, '+')
+        if temp != [0]:
+            result.append(temp)
+    return result
+
+
+def dot(tensor_x, tensor_y):
+    # 叉乘外层
+    print("tensor_x:{0}\ntensor_y:{1}".format(tensor_x, tensor_y))
+    shape_x = analyze_tensor(tensor_x, [])
+    shape_y = analyze_tensor(tensor_y, [])
+    if shape_x[-1] == shape_y[0]:
+        # x最底层与y顶层相差
+        # 遍历所有x底层
+        result = tra_tensor(tensor_x, tensor_y, [])
+        shape_z = analyze_tensor(result, [])
+        print("shape_x:{0}\nshape_y;{1}\nshape_z:{2}".format(shape_x, shape_y, shape_z))
+        print("【叉乘结果】:{0}".format(result))
+    else:
+        print("输入不合法！")
 
 # 测试
 # a = [3, 3]
@@ -251,13 +273,17 @@ def operate_tensor(tensor1, tensor2, operator):
 # print("x:{0}".format(x.data))
 
 
-x = [[1, 2], [3, 4]]
-y = 5
-z = operate_tensor(x,y,'.')
-print("result:{0}".format(z))
+# x = [[1, 2], [3, 4]]
+# y = 5
+# z = operate_tensor(x,y,'.')
+# print("result:{0}".format(z))
 # a = [1, 2]
 # shape = [2, 2]
 # z = init_tensor(shape, 0, a)
 # print(z)
 
 # analyze_structure("[[[1,2,3], [1,2,3]],[[1,2,3], [1,2,3]],[[1,2,3], [1,2,3]]]")
+
+x = [ [[1,2,3],[1,2,3],[1,2,3]], [[1,2,3],[1,2,3],[1,2,3]] ]
+y = [[[5,6],[7, 8],[9,10]],[[5,6],[7, 8],[9,10]], [[5,6],[7, 8],[9,10]]] 
+dot(x, y)
