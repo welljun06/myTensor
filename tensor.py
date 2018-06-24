@@ -3,11 +3,11 @@ import random as ran
 import re
 import copy
 class Tensor(object):
-    def __init__(self, ndim, shape, data):
+    def __init__(self, ndim, shape, data, dtype):
         self.ndim = ndim #维数
         self.shape = shape #形状
         self.data = data #数据
-        # TODO:self.dtype = dtype #类型
+        self.dtype = dtype #类型
 def random(x, index):
     # 随机生成
     if index >= len(x):
@@ -29,7 +29,7 @@ def init_tensor(shape, index, data):
         return temp
 
 def create_tensor_by_structure(shape, data, index):
-    # 生成特定格式tensor
+    # 根据data和shape生成特定格式tensor
     if index >= len(shape):
         c = int(data[0])
         data.pop(0)
@@ -54,7 +54,6 @@ def analyze_structure(str):
         elif c == ']':
             shape[len(shape) - 1] = count
             break
-    print("tensor:{0}".format(str))
     stack = []
     i = 0
     for c in str:
@@ -67,19 +66,18 @@ def analyze_structure(str):
     # 修正shape
     for i in range(1,len(shape)-1):
         shape[len(shape)-1 - i] = shape[len(shape) - 1 - i] / shape[len(shape) - 2 - i]
-    print("分析当前字符串形状:{0}".format(shape))
+    print("分析得到当前字符串形状:{0}".format(shape))
     return shape
 
 def analyze_tensor(tensor, shape):
     #分析结构返回shape
     if isinstance(tensor, list):
-        # print('yes')
         shape.append(len(tensor))
         analyze_tensor(tensor[0], shape) 
     return shape
 
-# 解析输入生成语句
 def analyse_statement(str):
+    # 解析输入生成语句
     str_split = str.split('=') # 将输入语句按照等号划分两半
     i = 0
     # 去除分割后数组前后多余空格
@@ -97,15 +95,12 @@ def analyse_statement(str):
     else:
         if str_split[1][0] == 'r':   
             para = str_split[1][5:-1]
-            print(para)
             print('[rand] 变量名：{0}, 形状：{1}'.format(str_split[0], para))
         elif str_split[1][0] == 'o':
             para = str_split[1][4:-1]
-            print(para)
             print('[one] 变量名：{0}, 形状：{1}'.format(str_split[0], para))
         elif str_split[1][0] == 'z':
             para = str_split[1][5:-1]
-            print(para)
             print('[zero] 变量名：{0}, 形状：{1}'.format(str_split[0], para))
         else:
             print('输入错误')
@@ -122,16 +117,20 @@ def analyse_statement(str):
             globals()[str_split[0]] = init_zero(shape)
 
 def init_random(shape):
-    return Tensor(len(shape), shape, random(shape, 0))
+    return Tensor(len(shape), shape, random(shape, 0), "Tensor")
 
 def init_one(shape):
-    return Tensor(len(shape), shape, init_tensor(shape, 0, 1))
+    return Tensor(len(shape), shape, init_tensor(shape, 0, 1), "Tensor")
 
 def init_zero(shape):
-    return Tensor(len(shape), shape, init_tensor(shape, 0, 0))
+    return Tensor(len(shape), shape, init_tensor(shape, 0, 0), "Tensor")
 
 def init_by_data(shape, data):
-    return Tensor(len(shape), shape, create_tensor_by_structure(shape, data, 0))
+    return Tensor(len(shape), shape, create_tensor_by_structure(shape, data, 0), "tensor")
+
+def init_by_list(data):
+    shape = analyze_tensor(data, [])
+    return Tensor(len(shape), shape, data, "tensor")
 
 #遍历tensor元素
 def get_tensor_data(tensor, data):
@@ -142,8 +141,9 @@ def get_tensor_data(tensor, data):
         data.append(tensor)
     return data
 
-# 统一操作加减点乘（相同维度）
+
 def cal_tensor(tensor1, tensor2, tensor3, operator):
+    # 统一操作加减点乘（相同维度）
     if isinstance(tensor1, list):
         i = 0
         for i in range(len(tensor1)):
@@ -156,8 +156,9 @@ def cal_tensor(tensor1, tensor2, tensor3, operator):
         elif operator == '.':
             tensor3.append(tensor1 * tensor2)
     return tensor3
-# 运算包装
+
 def operate_tensor(tensor1, tensor2, operator):
+    # 运算包装
     # 判断维度时候为0
     if not isinstance(tensor1, list):
         temp = tensor1
@@ -221,118 +222,100 @@ def operate_tensor(tensor1, tensor2, operator):
     print("【结果】：{0}".format(result))
     return result
 
-def cal_one_index(dgree, value):
-    # 计算下标
-    result = 0
-    for i in range(len(dgree)):
-        result += dgree[i] * value[i]
+def tra_tensor(tensor_x, tensor_y, result):
+    # 叉乘底层
+    temp = [0]
+    if isinstance(tensor_x, list):   
+        for i in range(len(tensor_x)):
+            if isinstance(tensor_x[i], list):
+                tra_tensor(tensor_x[i], tensor_y, result)
+            else:
+                temp_one = operate_tensor(tensor_x[i], tensor_y[i],'.')
+                temp = operate_tensor(temp_one, temp, '+')
+        if temp != [0]:
+            result.append(temp)
     return result
 
-def cal_dot(shape, index, dgree, list):
-    # 递归计算dgree 
-    if index >= len(shape):
-        print("当前dgree:{0} ".format(dgree))
-        new_dgree = copy.copy(dgree) # 注意此处要使用复制
-        list.append(new_dgree)
-    else:
-        for i in range(0,(shape[index])):
-            dgree[index] = i
-            cal_dot(shape, index + 1, dgree, list)
-    return list
-
-def cal_dgree_value(shape):
-    # 计算dgree对应value
-    value = init_one([len(shape)]).data
-    for i in range(1, len(value)):
-        print(value[-i - 1])
-        print(value[-i], shape[-i])
-        value[-i - 1] = value[-i] * shape[-i]
-        print(value[-i], shape[-i])
-    print("value:{0}".format(value))
-    return value
-def cal_by_expression(dgree_list, tensor_x, tensor_y):
-    shape_x = analyze_tensor(tensor_x, [])
-    shape_y = analyze_tensor(tensor_y, [])
-    data_x = get_tensor_data(tensor_x, [])
-    data_y = get_tensor_data(tensor_y, [])
-    value_x = cal_dgree_value(shape_x)
-    value_y = cal_dgree_value(shape_y)
-    for dgree in dgree_list:
-        dgree_x = dgree[:len(shape_x)-1]
-        dgree_y = dgree[len(shape_x)-1:]
-        dgree_x.append(0)
-        dgree_y.insert(0,0)
-        #计算一个块的结果值
-        for i in range(0, shape_y[0]):
-            dgree_x[-1] = i
-            dgree_y[0] = i
-            # 取得当前dgree对应的下标
-            index_x = cal_one_index(dgree_x, value_x)
-            index_y = cal_one_index(dgree_y, value_y)
-            print(data_x[index_x], data_y[index_y])
-        print("-----")
-    pass
 def dot(tensor_x, tensor_y):
     # 叉乘外层
     print("tensor_x:{0}\ntensor_y:{1}".format(tensor_x, tensor_y))
     shape_x = analyze_tensor(tensor_x, [])
     shape_y = analyze_tensor(tensor_y, [])
-    print("shape_x:{0}\nshape_y;{1}".format(shape_x, shape_y))
     if shape_x[-1] == shape_y[0]:
-        shape_z = shape_x[:-1] + shape_y[1:]
-        z = init_zero(shape_z)
-        data_z = get_tensor_data(z.data, [])
-        
-        dgree_z = init_tensor([len(shape_z)], 0, 0)
-        
-        value_z = cal_dgree_value(shape_z)
-        list_z = cal_dot(shape_z, 0, dgree_z, [])
-        # 根据公式计算结果
-        cal_by_expression(list_z, tensor_x, tensor_y)
-        # print("list:{0}".format(list))
-        # z = init_by_data(shape_z, data)
-        # print("【结果】：{0}".format(z.data))
-        # shape_z = analyze_tensor(result, [])
-        # print("shape_x:{0}\nshape_y;{1}\nshape_z:{2}".format(shape_x, shape_y, shape_z))
-        # print("【叉乘结果】:{0}".format(result))
-        pass
+        # x最底层与y顶层相乘
+        # 遍历所有x底层
+        result = tra_tensor(tensor_x, tensor_y, [])
+        shape_z = analyze_tensor(result, [])
+        print("shape_x:{0}\nshape_y;{1}\nshape_z:{2}".format(shape_x, shape_y, shape_z))
+        print("【叉乘结果】:{0}".format(result))
     else:
         print("输入不合法！")
 
+def tensor_begin(begin, tensor):
+    # 定位到开始位置
+    for i in range(len(begin)):
+        # print(begin[i])
+        if begin[i] != 0:
+            tensor = tensor[begin[i]:]
+            if i != 0:
+                tensor = tensor[0]
+    return tensor
+
+def tensor_size(shape, tensor, index, list):
+    # 按照size遍历tensor
+    if index >= len(shape):
+        list.append(tensor)
+    else:
+        for i in range(0, shape[index]):
+            print("tensor[i]:{0},index:{1}".format(tensor[i], index))
+            tensor_size(shape, tensor[i], index + 1, list)
+    return list
+            
+def tensor_slice(inputs, begin, size):
+    # begin
+    inputs = tensor_begin(begin, inputs)
+    print(inputs)
+    result_data = tensor_size(size, inputs, 0, [])
+    result = init_by_data(size, result_data)
+    print(result.data)
+
+
 # 测试
-# a = [3, 3]
+# 1.----
+# shape = [3, 3]
+# b = init_random(shape)
+# c = init_one(shape)
+# d = init_zero(shape)
+# print("[rand]\nb_ndim:{0}, b_shape:{1}, b_dtype:{2}\nb_data:{3}".format(b.ndim, b.shape, b.dtype, b.data))
+# print("[one]\nc_ndim:{0}, c_shape:{1}, c_dtype:{2}\nc_data:{3}".format(c.ndim, c.shape, c.dtype, c.data))
+# print("[zero]\nd_ndim:{0}, d_shape:{1}, d_dtype:{2}\nd_data:{3}".format(d.ndim, d.shape, d.dtype, d.data))
+
+# 2.----
 # z = [[7, 9, 8], [4, 3, 2], [0, 1, 7]]
-# b = init_random(a)
-# c = init_one(a)
-# d = init_zero(a)
-# print(b.data)
-# print(c.data)
-# print(d.data)
-# print(b.ndim)
-# print(analyze_tensor(b.data, []))
-# str = "test1 = [1,2,3]"
-# analyse_statement(str)
-# a = "".join(re.split(r"\[|\]", a))
+# a = init_by_list(z)
+# print("[data]\na_ndim:{0}, a_shape:{1}, a_dtype:{2}\na_data:{3}".format(a.ndim, a.shape, a.dtype, a.data))
+
+# 3.----
 # str1 = "test1 = [[[1, 2], [4, 5], [7, 8]]]"
 # analyse_statement(str1)
 # print("test1:{0}".format(test1.data))
+# print("--------------------------------")
+# str2 = "test2 = one((2,2))"
+# analyse_statement(str2)
+# print("test2:{0}".format(test2.data))
 
-# str = "x = one((2,2))"
-# analyse_statement(str)
-# print("x:{0}".format(x.data))
+# 4.----
+x = [[1, 2], [3, 4]]
+y = [5, 6]
+z = operate_tensor(x,y,'.')
+print("result:{0}".format(z))
 
-
-# x = [[1, 2], [3, 4]]
-# y = 5
-# z = operate_tensor(x,y,'.')
-# print("result:{0}".format(z))
-# a = [1, 2]
-# shape = [2, 2]
-# z = init_tensor(shape, 0, a)
-# print(z)
-
-# analyze_structure("[[[1,2,3], [1,2,3]],[[1,2,3], [1,2,3]],[[1,2,3], [1,2,3]]]")
-
-x = [[[1,2,3],[1,2,3],[1,2,3]], [[1,2,3],[1,2,3],[1,2,3]]]
-y = [[[5,6],[7, 8],[9,10]],[[5,6],[7, 8],[9,10]], [[5,6],[7, 8],[9,10]]]
+# 5.----
+x = [[1,2],[3,4]]
+y = [[[5,6],[7, 8],[9,10]],[[5,6],[7, 8],[9,10]]] 
 dot(x, y)
+
+# t = [[[1, 1, 1], [2, 2, 2]],[[3, 3, 3], [4, 4, 4]],[[5, 5, 5], [6, 6, 6]]]
+# begin = [1, 0, 0]
+# size = [1, 1, 3]
+# tensor_slice(t, begin, size)

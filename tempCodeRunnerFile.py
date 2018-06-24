@@ -1,4 +1,3 @@
-list.append(dgree)
-            print("当前dgree:{0} 当前value：{1}".format(dgree, value))
-            one_index = cal_one_index(dgree, value)
-            p
+x = [[1,2],[3,4]]
+y = [[[5,6],[7, 8],[9,10]],[[5,6],[7, 8],[9,10]]] 
+dot(x, y)
