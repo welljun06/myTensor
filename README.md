@@ -1,4 +1,4 @@
-### 简易tensor语言设计与实现 
+### 简易tensor语言设计与实现
 
 #### 1.数据结构
 
@@ -71,7 +71,7 @@ c_data:[[1, 1, 1], [1, 1, 1], [1, 1, 1]]
 d_ndim:2, d_shape:[3, 3], d_dtype:Tensor
 ```
 
-#### 3. 生成指定结构的tensor 
+#### 3. 生成指定结构的tensor
 
 由于python支持多层列表的识别，和生成，但是无法得到`shape`信息，因此需要生成`tensor`信息还需要分析`shape`信息。
 
@@ -489,3 +489,145 @@ shape_z:[2, 3, 2]
 
 **分析**：可以看到进行了多次广播操作。
 
+### 形状操作
+
+#### 1. shape
+
+```python
+def get_shape(tensor):
+    shape = analyze_tensor(tensor, [])
+    print("shape:{0}".format(shape))
+```
+
+直接使用上面实现的`analyze_tensor()`函数实现
+
+**结果测试**：
+
+```python
+x = [[1, 2],[3, 4]]
+y=[5,6]
+get_shape(x)
+get_shape(y)
+```
+
+**运行结果**：yu
+
+```python
+shape:[2, 2]
+shape:[2]
+```
+
+#### 2. reshape
+
+```python
+def reshape_tensor(tensor, new_shape):
+    # 对tensor进行reshape操作
+    shape = analyze_tensor(tensor, [])
+    size = shape_size(shape)
+    new_size = shape_size(new_shape)
+    if size != new_size:
+        print("error")
+    else:
+        data = get_tensor_data(tensor, [])
+        new_tensor = create_tensor_by_structure(new_shape, data, 0)
+        return new_tensor
+```
+
+**原理**：分析原`shape`的`size`大小，与`new_shape`的`size`进行比较，如果合法则进行reshape操作，将原有数据一维化，利用`create_tensor_by_structure()`创建新`tensor`。
+
+**结果测试**：
+
+```python
+x = [[1, 2],[3, 4]]
+new_shape = [4, 1]
+x_new = reshape_tensor(x, new_shape)
+print("x_new:{0}".format(x_new))
+```
+
+**运行结果**：
+
+```python
+x_new:[[1], [2], [3], [4]]
+```
+
+#### 3. size
+
+```python
+def get_tensor_size(tensor):
+    # 返回tensor的szie信息
+    shape = analyze_tensor(tensor, [])
+    size = shape_size(shape)
+    print("size:{0}".format(size))
+    return size
+```
+
+**原理**：与之前类似，分析`tensor`的形状，再根据`shape`信息得到`size`大小。
+
+**结果测试**：
+
+```python
+x = [[1, 2],[3, 4]]
+get_tensor_size(x)
+```
+
+**运行结果**：
+
+```python
+size:4
+```
+
+#### 4. slice操作
+
+```python
+def tensor_slice(inputs, begin, size):
+    # tensor切片操作
+    inputs = tensor_begin(begin, inputs)
+    print(inputs)
+    result_data = tensor_size(size, inputs, 0, [])
+    result = init_by_data(size, result_data)
+    print(result.data)
+```
+
+**原理**：slice函数需要三个参数
+
+- inputs：需要操作的tensor
+- begin：定位到开始切片的位置
+- size：切片后的tensor的shape
+
+首先处理的是begin参数
+
+```python
+def tensor_begin(begin, tensor):
+    # 定位到开始位置
+    for i in range(len(begin)):
+        # print(begin[i])
+        if begin[i] != 0:
+            tensor = tensor[begin[i]:]
+            if i != 0:
+                tensor = tensor[0]
+    return tensor
+```
+
+**原理**：遍历begin列表，如果当前遍历的begin数据不为0，则从begin[i]行开始取，如果不是第一次操作，则tensor取下一层。最后返回新的tensor，开头即为开始位置。
+
+接下来处理size参数
+
+```python
+def tensor_size(shape, tensor, index, list):
+    # 按照size遍历tensor
+    if index >= len(shape):
+        list.append(tensor)
+    else:
+        for i in range(0, shape[index]):
+            print("tensor[i]:{0},index:{1}".format(tensor[i], index))
+            tensor_size(shape, tensor[i], index + 1, list)
+    return list
+```
+
+**原理**：即按照size的shape来当前tensor进行遍历，将访问到的元素存储为一维list
+
+最后通过`init_by_data()`创建新的tensor即为slice后产生的tensor
+
+### 简易tensor语言类型检测 
+
+### 

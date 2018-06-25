@@ -132,8 +132,9 @@ def init_by_list(data):
     shape = analyze_tensor(data, [])
     return Tensor(len(shape), shape, data, "tensor")
 
-#遍历tensor元素
+
 def get_tensor_data(tensor, data):
+    # 取出tenosr数据为1维
     if isinstance(tensor, list):
         for i in range(len(tensor)):
             get_tensor_data(tensor[i], data)
@@ -272,12 +273,42 @@ def tensor_size(shape, tensor, index, list):
     return list
             
 def tensor_slice(inputs, begin, size):
-    # begin
+    # tensor切片操作
     inputs = tensor_begin(begin, inputs)
     print(inputs)
     result_data = tensor_size(size, inputs, 0, [])
     result = init_by_data(size, result_data)
     print(result.data)
+
+def get_shape(tensor):
+    # 输出tensor.shape信息
+    shape = analyze_tensor(tensor, [])
+    print("shape:{0}".format(shape))
+
+def reshape_tensor(tensor, new_shape):
+    # 对tensor进行reshape操作
+    shape = analyze_tensor(tensor, [])
+    size = shape_size(shape)
+    new_size = shape_size(new_shape)
+    if size != new_size:
+        print("error")
+    else:
+        data = get_tensor_data(tensor, [])
+        new_tensor = create_tensor_by_structure(new_shape, data, 0)
+        return new_tensor
+
+def shape_size(shape):
+    size = 1
+    for i in shape:
+        size *= i
+    return size
+
+def get_tensor_size(tensor):
+    # 返回tensor的szie信息
+    shape = analyze_tensor(tensor, [])
+    size = shape_size(shape)
+    print("size:{0}".format(size))
+    return size
 
 
 # 测试
@@ -305,17 +336,28 @@ def tensor_slice(inputs, begin, size):
 # print("test2:{0}".format(test2.data))
 
 # 4.----
-x = [[1, 2], [3, 4]]
-y = [5, 6]
-z = operate_tensor(x,y,'.')
-print("result:{0}".format(z))
+# x = [[1, 2], [3, 4]]
+# y = [5, 6]
+# z = operate_tensor(x,y,'.')
+# print("result:{0}".format(z))
 
 # 5.----
-x = [[1,2],[3,4]]
-y = [[[5,6],[7, 8],[9,10]],[[5,6],[7, 8],[9,10]]] 
-dot(x, y)
+# x = [[1,2],[3,4]]
+# y = [[[5,6],[7, 8],[9,10]],[[5,6],[7, 8],[9,10]]] 
+# dot(x, y)
 
-# t = [[[1, 1, 1], [2, 2, 2]],[[3, 3, 3], [4, 4, 4]],[[5, 5, 5], [6, 6, 6]]]
-# begin = [1, 0, 0]
-# size = [1, 1, 3]
-# tensor_slice(t, begin, size)
+# 6.----
+x = [[1, 2],[3, 4]]
+y=[5,6]
+get_shape(x)
+get_shape(y)
+new_shape = [4, 1]
+x_new = reshape_tensor(x, new_shape)
+print("x_new:{0}".format(x_new))
+get_tensor_size(x)
+
+# 7.----
+t = [[[1, 1, 1], [2, 2, 2]],[[3, 3, 3], [4, 4, 4]],[[5, 5, 5], [6, 6, 6]]]
+begin = [1, 0, 0]
+size = [1, 1, 3]
+tensor_slice(t, begin, size)
