@@ -628,6 +628,93 @@ def tensor_size(shape, tensor, index, list):
 
 最后通过`init_by_data()`创建新的tensor即为slice后产生的tensor
 
-### 简易tensor语言类型检测 
+**结果测试**：
 
-### 
+```python
+t = [[[1, 1, 1], [2, 2, 2]],[[3, 3, 3], [4, 4, 4]],[[5, 5, 5], [6, 6, 6]]]
+begin = [1, 0, 0]
+size = [1, 2, 3]
+tensor_slice(t, begin, size)
+```
+
+**运行结果**：
+
+```
+[[[3, 3, 3], [4, 4, 4]]]
+```
+
+### 简易Tensor语言识别
+
+这里定义两种语句，一种是赋值语句，一种执行语句
+
+```python
+def analyse_type(str):
+    # tensor语言类型检测
+    if '=' in str:
+        str_split = str.split('=') # 将输入语句按照等号划分两半
+        for i in range(len(str_split)):
+            str_split[i] = str_split[i].strip()
+        if '*' in str:
+            # 叉乘
+            argv = str_split[1].split('*')
+            for i in range(len(argv)):
+                argv[i] = argv[i].strip()
+                print(argv[i])
+            result = eval('dot({0}, {1})'.format(argv[0], argv[1]))
+            shape = get_shape(result)
+            exec_str = '{2} = dot({0}, {1})'.format(argv[0], argv[1], str_split[0])
+            exec(exec_str, globals())
+        else:
+            exec(str, globals())
+            shape = eval('get_shape({0})'.format(str_split[1]))
+        print('{0}:tensor{1}'.format(str_split[0], shape))
+    else:
+        exec(str)  
+```
+
+**原理**：如果有等号，根据等号将语句划分，如果没有‘*’，则是赋值语句，只需要将语句执行后统计shape信息，这里注意`exec()`要使用`globals()`参数才能全局创建变量。如果是`叉乘`情况，则需要将变量取出后通过`eval()`调用`dot()`函数，最后一样统计`shape`信息即可。
+
+**结果测试**：
+
+```python
+str1 = "x = [1, 2]"
+analyse_type(str1)
+```
+
+**运行结果**：
+
+```python
+x:tensor[2]
+```
+
+**结果测试**：
+
+```python
+y = [[3,4,5],[6,7,8]]
+str1 = "print(y)"
+analyse_type(str1)
+```
+
+**运行结果**：
+
+```python
+[[3, 4, 5], [6, 7, 8]]
+```
+
+**结果测试**：
+
+```python
+x = [1,2]
+y = [[3,4,5],[6,7,8]]
+str1 = "z = x * y"
+analyse_type(str1)
+print("z:{0}".format(z))
+```
+
+**运行结果**：
+
+```python
+z:tensor[1, 3]
+z:[[15, 18, 21]]
+```
+
