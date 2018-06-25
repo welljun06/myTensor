@@ -249,6 +249,7 @@ def dot(tensor_x, tensor_y):
         shape_z = analyze_tensor(result, [])
         print("shape_x:{0}\nshape_y;{1}\nshape_z:{2}".format(shape_x, shape_y, shape_z))
         print("【叉乘结果】:{0}".format(result))
+        return result
     else:
         print("输入不合法！")
 
@@ -268,14 +269,13 @@ def tensor_size(shape, tensor, index, list):
         list.append(tensor)
     else:
         for i in range(0, shape[index]):
-            print("tensor[i]:{0},index:{1}".format(tensor[i], index))
+            # print("tensor[i]:{0},index:{1}".format(tensor[i], index))
             tensor_size(shape, tensor[i], index + 1, list)
     return list
             
 def tensor_slice(inputs, begin, size):
     # tensor切片操作
     inputs = tensor_begin(begin, inputs)
-    print(inputs)
     result_data = tensor_size(size, inputs, 0, [])
     result = init_by_data(size, result_data)
     print(result.data)
@@ -283,7 +283,8 @@ def tensor_slice(inputs, begin, size):
 def get_shape(tensor):
     # 输出tensor.shape信息
     shape = analyze_tensor(tensor, [])
-    print("shape:{0}".format(shape))
+    # print("shape:{0}".format(shape))
+    return shape
 
 def reshape_tensor(tensor, new_shape):
     # 对tensor进行reshape操作
@@ -298,6 +299,7 @@ def reshape_tensor(tensor, new_shape):
         return new_tensor
 
 def shape_size(shape):
+    # 返回shape对应size信息
     size = 1
     for i in shape:
         size *= i
@@ -310,6 +312,28 @@ def get_tensor_size(tensor):
     print("size:{0}".format(size))
     return size
 
+def analyse_type(str):
+    # tensor语言类型检测
+    if '=' in str:
+        str_split = str.split('=') # 将输入语句按照等号划分两半
+        for i in range(len(str_split)):
+            str_split[i] = str_split[i].strip()
+        if '*' in str:
+            # 叉乘
+            argv = str_split[1].split('*')
+            for i in range(len(argv)):
+                argv[i] = argv[i].strip()
+                print(argv[i])
+            result = eval('dot({0}, {1})'.format(argv[0], argv[1]))
+            shape = get_shape(result)
+            exec_str = '{2} = dot({0}, {1})'.format(argv[0], argv[1], str_split[0])
+            exec(exec_str, globals())
+        else:
+            exec(str, globals())
+            shape = eval('get_shape({0})'.format(str_split[1]))
+        print('{0}:tensor{1}'.format(str_split[0], shape))
+    else:
+        exec(str)  
 
 # 测试
 # 1.----
@@ -347,17 +371,24 @@ def get_tensor_size(tensor):
 # dot(x, y)
 
 # 6.----
-x = [[1, 2],[3, 4]]
-y=[5,6]
-get_shape(x)
-get_shape(y)
-new_shape = [4, 1]
-x_new = reshape_tensor(x, new_shape)
-print("x_new:{0}".format(x_new))
-get_tensor_size(x)
+# x = [[1, 2],[3, 4]]
+# y=[5,6]
+# get_shape(x)
+# get_shape(y)
+# new_shape = [4, 1]
+# x_new = reshape_tensor(x, new_shape)
+# print("x_new:{0}".format(x_new))
+# get_tensor_size(x)
 
 # 7.----
-t = [[[1, 1, 1], [2, 2, 2]],[[3, 3, 3], [4, 4, 4]],[[5, 5, 5], [6, 6, 6]]]
-begin = [1, 0, 0]
-size = [1, 1, 3]
-tensor_slice(t, begin, size)
+# t = [[[1, 1, 1], [2, 2, 2]],[[3, 3, 3], [4, 4, 4]],[[5, 5, 5], [6, 6, 6]]]
+# begin = [1, 0, 0]
+# size = [1, 2, 3]
+# tensor_slice(t, begin, size)
+
+# 8.----
+# x = [1,2]
+# y = [[3,4,5],[6,7,8]]
+# str1 = "z = x * y"
+# analyse_type(str1)
+# print("z:{0}".format(z))
